@@ -1,0 +1,6 @@
+FROM homebridge/homebridge:latest
+RUN apt-get update && \
+    apt-get install jq && \
+    apt-get clean
+COPY ./config.json /defaults/
+COPY ./startup.sh /defaults/

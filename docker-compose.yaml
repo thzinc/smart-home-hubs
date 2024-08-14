@@ -1,0 +1,12 @@
+version: "2"
+
+volumes:
+  homebridge:
+
+services:
+  homebridge:
+    build: ./homebridge
+    restart: always
+    network_mode: host
+    volumes:
+      - homebridge:/homebridge

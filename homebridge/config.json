@@ -1,0 +1,14 @@
+{
+  "bridge": {
+    "port": 51807,
+    "advertiser": "bonjour-hap"
+  },
+  "accessories": [],
+  "platforms": [
+    {
+      "name": "Config",
+      "port": 80,
+      "platform": "config"
+    }
+  ]
+}
