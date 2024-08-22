@@ -66,6 +66,8 @@ else
             record_repeatedly "$STREAM_NAME" "$STREAM_URL" &
         done
 
+        python -m http.server -d "$VIDEO_RECORDER_VOLUME_MOUNTPOINT" 9000 &
+
         wait
     fi
 fi

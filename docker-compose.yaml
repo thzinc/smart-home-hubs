@@ -20,3 +20,5 @@ services:
     build: ./video-recorder
     restart: always
     privileged: true
+    ports:
+      - 9000:9000
