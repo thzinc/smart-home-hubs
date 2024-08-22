@@ -16,3 +16,7 @@ services:
     network_mode: host
     volumes:
       - homebridge:/homebridge
+  video-recorder:
+    build: ./video-recorder
+    restart: always
+    privileged: true

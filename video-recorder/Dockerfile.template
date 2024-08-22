@@ -1,0 +1,7 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-debian:bookworm
+ENV UDEV=on
+RUN apt-get update && \
+    apt-get install ffmpeg
+
+COPY ./start.sh /usr/bin/start.sh
+CMD [ "/usr/bin/start.sh" ]
