@@ -5,16 +5,18 @@ VIDEO_RECORDER_ENABLED=${VIDEO_RECORDER_ENABLED:-}
 VIDEO_RECORDER_VOLUME_LABEL=${VIDEO_RECORDER_VOLUME_LABEL:-}
 VIDEO_RECORDER_VOLUME_FILESYSTEM_TYPE=${VIDEO_RECORDER_VOLUME_FILESYSTEM_TYPE:-}
 VIDEO_RECORDER_VOLUME_MOUNTPOINT=${VIDEO_RECORDER_VOLUME_MOUNTPOINT:-/video-recorder/data}
-VIDEO_RECORDER_SLEEP=${VIDEO_RECORDER_SLEEP:-2}
-VIDEO_RECORDER_SEGMENT_SECONDS=${VIDEO_RECORDER_SEGMENT_SECONDS:-600}
+VIDEO_RECORDER_SLEEP_SECONDS=${VIDEO_RECORDER_SLEEP_SECONDS:-2}
+VIDEO_RECORDER_SEGMENT_TIME=${VIDEO_RECORDER_SEGMENT_TIME:-00:10:00}
+VIDEO_RECORDER_LOG_LEVEL=${VIDEO_RECORDER_LOG_LEVEL:-error}
+VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS=${VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS:-10000000}
 
 record_repeatedly() {
     echo "Recording $1 from $2..."
-    PREFIX="$VIDEO_RECORDER_VOLUME_MOUNTPOINT/${1//[^[:alnum:]]/-}"
+    OUTPUT="$VIDEO_RECORDER_VOLUME_MOUNTPOINT/${1//[^[:alnum:]]/-}-%Y%m%dT%H%M%S.mkv"
     ffmpeg \
         -hide_banner \
         -y \
-        -loglevel error \
+        -loglevel "$VIDEO_RECORDER_LOG_LEVEL" \
         -rtsp_transport tcp \
         -use_wallclock_as_timestamps 1 \
         -i "$2" \
@@ -22,15 +24,16 @@ record_repeatedly() {
         -acodec copy \
         -f segment \
         -reset_timestamps 1 \
-        -segment_time "$VIDEO_RECORDER_SEGMENT_SECONDS" \
+        -segment_time "$VIDEO_RECORDER_SEGMENT_TIME" \
         -segment_format mkv \
         -segment_atclocktime 1 \
+        -timeout "$VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS" \
         -strftime 1 \
-        "$PREFIX-%Y%m%dT%H%M%S.mkv" ||
+        "$OUTPUT" ||
         echo "Recording failed"
 
-    echo "Recording $1 stopped prematurely; sleeping for $VIDEO_RECORDER_SLEEP seconds..."
-    sleep "$VIDEO_RECORDER_SLEEP"
+    echo "Recording $1 stopped prematurely; sleeping for $VIDEO_RECORDER_SLEEP_SECONDS seconds..."
+    sleep "$VIDEO_RECORDER_SLEEP_SECONDS"
 
     echo "Trying again"
     record_repeatedly "$@"
