@@ -9,6 +9,8 @@ VIDEO_RECORDER_SLEEP_SECONDS=${VIDEO_RECORDER_SLEEP_SECONDS:-2}
 VIDEO_RECORDER_SEGMENT_TIME=${VIDEO_RECORDER_SEGMENT_TIME:-00:10:00}
 VIDEO_RECORDER_LOG_LEVEL=${VIDEO_RECORDER_LOG_LEVEL:-error}
 VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS=${VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS:-10000000}
+VIDEO_RECORDER_LIVENESS_PING=${VIDEO_RECORDER_LIVENESS_PING:-1.1.1.1}
+VIDEO_RECORDER_LIVENESS_SLEEP_SECONDS=${VIDEO_RECORDER_LIVENESS_SLEEP_SECONDS:-$VIDEO_RECORDER_SLEEP_SECONDS}
 
 record_repeatedly() {
     echo "Recording $1 from $2..."
@@ -37,6 +39,18 @@ record_repeatedly() {
 
     echo "Trying again"
     record_repeatedly "$@"
+}
+
+liveness_check() {
+    chronic ping -q -f -c 3 -w 10 "$VIDEO_RECORDER_LIVENESS_PING" ||
+        (
+            echo "Liveness ping to $VIDEO_RECORDER_LIVENESS_PING failed!"
+            exit 1
+        )
+
+    sleep "$VIDEO_RECORDER_LIVENESS_SLEEP_SECONDS"
+
+    liveness_check
 }
 
 if [ -z "$VIDEO_RECORDER_ENABLED" ]; then
@@ -71,6 +85,6 @@ else
 
         python -m http.server -d "$VIDEO_RECORDER_VOLUME_MOUNTPOINT" 9000 &
 
-        wait
+        liveness_check
     fi
 fi
