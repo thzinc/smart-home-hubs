@@ -4,4 +4,5 @@ RUN apt-get update && \
     apt-get install ffmpeg moreutils
 
 COPY ./start.sh /usr/bin/start.sh
+COPY ./rclone-v1.68.2-linux-arm64/rclone /usr/bin/rclone
 CMD [ "/usr/bin/start.sh" ]

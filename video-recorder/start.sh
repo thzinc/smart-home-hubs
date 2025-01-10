@@ -11,6 +11,7 @@ VIDEO_RECORDER_LOG_LEVEL=${VIDEO_RECORDER_LOG_LEVEL:-error}
 VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS=${VIDEO_RECORDER_SOCKET_TIMEOUT_MICROSECONDS:-10000000}
 VIDEO_RECORDER_LIVENESS_PING=${VIDEO_RECORDER_LIVENESS_PING:-1.1.1.1}
 VIDEO_RECORDER_LIVENESS_SLEEP_SECONDS=${VIDEO_RECORDER_LIVENESS_SLEEP_SECONDS:-$VIDEO_RECORDER_SLEEP_SECONDS}
+VIDEO_RECORDER_SYNC_TIMEOUT_SECONDS=${VIDEO_RECORDER_SYNC_TIMEOUT_SECONDS:-600}
 
 record_repeatedly() {
     echo "Recording $1 from $2..."
@@ -39,6 +40,29 @@ record_repeatedly() {
 
     echo "Trying again"
     record_repeatedly "$@"
+}
+
+sync_repeatedly() {
+    SOURCE="$VIDEO_RECORDER_VOLUME_MOUNTPOINT"
+    TARGET=":b2:$VIDEO_RECORDER_S3_BUCKET"
+    KEY="$VIDEO_RECORDER_S3_KEY"
+    SECRET="$VIDEO_RECORDER_S3_SECRET"
+
+    echo "Syncing $SOURCE to $TARGET"
+    rclone sync --b2-account "$KEY" \
+        --b2-key "$SECRET" \
+        --fast-list \
+        --size-only \
+        --include '*.mkv' \
+        "$SOURCE" "$TARGET" || (
+        echo "Sync failed!"
+    )
+
+    echo "Sync ended; sleeping for $VIDEO_RECORDER_SYNC_TIMEOUT_SECONDS seconds..."
+    sleep "$VIDEO_RECORDER_SYNC_TIMEOUT_SECONDS"
+
+    echo "Attempting next sync"
+    sync_repeatedly "$@"
 }
 
 liveness_check() {
@@ -82,6 +106,8 @@ else
             STREAM_URL=${!KEY}
             record_repeatedly "$STREAM_NAME" "$STREAM_URL" &
         done
+
+        sync_repeatedly &
 
         python -m http.server -d "$VIDEO_RECORDER_VOLUME_MOUNTPOINT" 9000 &
 
